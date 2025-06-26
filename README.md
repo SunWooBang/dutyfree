@@ -1,2 +1,2 @@
 # dutyfree
-수간호사인 어머니의 효율적인 근무표 작성을 돕기 위해 개발한 서비스입니다.
+It is a service developed to help mothers, who are head nurses, write an efficient work schedule.
