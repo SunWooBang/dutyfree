@@ -1,0 +1,75 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* 전체 페이지에서 텍스트 선택 및 커서 방지 (이름 입력칸 제외) */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: default !important;
+}
+
+/* 이미지 드래그 방지 */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+}
+
+/* 버튼 내 이미지는 클릭 이벤트 차단하지 않음 */
+button img, label img {
+  pointer-events: none;
+}
+
+/* 버튼과 라벨에 포인터 커서 강제 적용 */
+button, label[for] {
+  cursor: pointer !important;
+}
+
+/* 버튼과 라벨 전체 영역에 포인터 커서 적용 */
+.btn, .drawer-button {
+  cursor: pointer !important;
+}
+
+/* 이름 입력칸에만 텍스트 입력 커서 허용 */
+.name-input {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  cursor: text !important;
+  text-align: center;
+}
+
+/* 버튼 및 입력 요소들의 기본 커서 복원 */
+button, input[type="checkbox"], input[type="radio"], select, label {
+  cursor: pointer !important;
+}
+
+/* 메뉴 관련 요소들 */
+.menu li > *, .menu li > a, .menu-title, .menu-title > a {
+  cursor: pointer !important;
+}
+
+/* 텍스트 입력 필드의 커서 복원 */
+input[type="text"], input[type="number"], textarea {
+  cursor: text !important;
+}
+
+/* 드로어 성능 최적화만 적용 - DaisyUI 기본 애니메이션 유지 */
+.drawer-side {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
