@@ -1,6 +1,6 @@
-# Dutyfree - 근무표 작성 도우미
+# Dutyfree - Services to help you create a nurse's schedule    
 
-It is a service developed to help head nurses, write an efficient work schedule.
+It is a service developed to help head nurses, write an efficient work schedule.   
 간호사의 효율적인 근무표 작성을 도와주기 위해 개발된 서비스입니다.
 
 ## 기술 스택
