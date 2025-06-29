@@ -33,7 +33,8 @@ const HelpModal = ({ isOpen, onClose }) => {
                       <div className="bg-gray-200 p-1">N</div>
                       <div className="bg-gray-200 p-1">OFF</div>
                       <div className="bg-gray-200 p-1">근무일</div>
-                      <div className="bg-gray-200 p-1">1일...</div>
+                      <div className="bg-gray-200 p-1">1일</div>
+                      <div className="bg-gray-200 p-1">2일...</div>
                     </div>
                     <div className="grid grid-cols-8 gap-1 text-center mt-1">
                       <div className="p-1">홍길동</div>
@@ -42,6 +43,7 @@ const HelpModal = ({ isOpen, onClose }) => {
                       <div className="p-1">-</div>
                       <div className="p-1">-</div>
                       <div className="p-1">-</div>
+                      <div className="p-1">D</div>
                       <div className="p-1">D</div>
                     </div>
                   </div>

@@ -5,8 +5,49 @@ const WorkRuleModal = ({
   onClose, 
   workRules, 
   setWorkRules,
-  onCloseSettings 
+  onCloseSettings,
+  employeeNames = [] // 근무자 이름 목록 추가
 }) => {
+  // 이미 충돌 규칙에 설정된 근무자들 가져오기
+  const getUsedEmployees = () => {
+    if (!workRules.conflictRules) return []
+    const used = new Set()
+    workRules.conflictRules.forEach(rule => {
+      if (rule.employee1) used.add(rule.employee1)
+      if (rule.employee2) used.add(rule.employee2)
+    })
+    return Array.from(used)
+  }
+
+  // 새 규칙에 사용 가능한 근무자들
+  const getAvailableEmployeesForNewRule = () => {
+    const usedEmployees = getUsedEmployees()
+    return employeeNames.filter(name => !usedEmployees.includes(name))
+  }
+
+  // 특정 규칙의 특정 위치에서 선택 가능한 근무자들
+  const getAvailableEmployeesForSelect = (currentRuleIndex, isEmployee1) => {
+    const currentRule = workRules.conflictRules[currentRuleIndex]
+    const otherEmployee = isEmployee1 ? currentRule.employee2 : currentRule.employee1
+    
+    // 다른 규칙들에서 사용된 근무자들
+    const usedInOtherRules = new Set()
+    workRules.conflictRules.forEach((rule, index) => {
+      if (index !== currentRuleIndex) {
+        if (rule.employee1) usedInOtherRules.add(rule.employee1)
+        if (rule.employee2) usedInOtherRules.add(rule.employee2)
+      }
+    })
+    
+    return employeeNames.filter(name => {
+      // 같은 규칙 내에서 상대방과 다른 사람이어야 함
+      if (name === otherEmployee) return false
+      // 다른 규칙에서 이미 사용되지 않은 사람이어야 함
+      if (usedInOtherRules.has(name)) return false
+      return true
+    })
+  }
+
   const handleApply = () => {
     onClose()
     onCloseSettings() // 설정 메뉴도 함께 닫기
@@ -46,6 +87,7 @@ const WorkRuleModal = ({
                 </div>
               )}
               <div>계산 방식: {workRules.calculationMethod === 'sum' ? 'D+E+N 합계' : '전체일수-OFF'}</div>
+              <div>근무 충돌 방지: {workRules.conflictRules?.length > 0 ? `${workRules.conflictRules.length}개 규칙 적용` : '설정 없음'}</div>
             </div>
           </div>
           
@@ -160,6 +202,136 @@ const WorkRuleModal = ({
 
             <div className="divider"></div>
 
+            {/* 근무 충돌 방지 설정 */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium text-lg">근무 충돌 방지 설정</span>
+                <span className="label-text-alt text-gray-500">특정 근무자들이 같은 날 근무하지 않도록 설정</span>
+              </label>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-2 mb-2">
+                  <div className="text-yellow-600 text-sm">⚠️</div>
+                  <div className="text-sm text-yellow-700">
+                    <div className="font-medium mb-1">충돌 방지 기능 사용법:</div>
+                    <div className="text-xs space-y-1">
+                      <div>• 같은 유형의 근무(D,E,N)를 하지 않도록 하는 근무자 쌍을 설정할 수 있습니다</div>
+                      <div>• 예: "시우"와 "시율"이 사이가 나빠서 같은 유형 근무를 할 수 없는 경우</div>
+                      <div>• 설정된 쌍 중 한 명이 특정 날짜에 D 근무를 선택하면, 다른 한 명은 그 날 D 근무만 선택할 수 없습니다</div>
+                      <div>• OFF(/) 근무는 충돌에 해당하지 않습니다</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 충돌 규칙 목록 */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">충돌 방지 규칙 목록</span>
+                  <button 
+                    className="btn btn-sm btn-primary"
+                    onClick={() => {
+                      const availableEmployees = getAvailableEmployeesForNewRule()
+                      if (availableEmployees.length < 2) {
+                        const usedCount = getUsedEmployees().length
+                        if (usedCount === 0) {
+                          showAlert('충돌 규칙을 추가하려면 최소 2명의 근무자가 필요합니다.', 'warning')
+                        } else {
+                          showAlert(`이미 설정된 근무자들을 제외하고 사용 가능한 근무자가 ${availableEmployees.length}명입니다.\n새 규칙을 추가하려면 최소 2명이 필요합니다.`, 'warning')
+                        }
+                        return
+                      }
+                      const newRule = {
+                        id: Date.now(),
+                        employee1: '',
+                        employee2: ''
+                      }
+                      setWorkRules(prev => ({
+                        ...prev,
+                        conflictRules: [...(prev.conflictRules || []), newRule]
+                      }))
+                    }}
+                  >
+                    규칙 추가
+                  </button>
+                </div>
+
+                {(!workRules.conflictRules || workRules.conflictRules.length === 0) ? (
+                  <div className="text-center text-gray-500 text-sm py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                    아직 설정된 충돌 방지 규칙이 없습니다.<br />
+                    "규칙 추가" 버튼을 클릭하여 새 규칙을 만들어보세요.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {workRules.conflictRules.map((rule, index) => (
+                      <div key={rule.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                        <span className="text-sm text-gray-600 min-w-0 flex-shrink-0">#{index + 1}</span>
+                        
+                        <select 
+                          className="select select-bordered select-sm flex-1 min-w-0"
+                          value={rule.employee1}
+                          onChange={(e) => {
+                            const newRules = [...workRules.conflictRules]
+                            newRules[index].employee1 = e.target.value
+                            setWorkRules(prev => ({
+                              ...prev,
+                              conflictRules: newRules
+                            }))
+                          }}
+                        >
+                          <option value="">근무자 선택</option>
+                          {getAvailableEmployeesForSelect(index, true).map(name => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        
+                        <span className="text-sm text-gray-500 flex-shrink-0">와</span>
+                        
+                        <select 
+                          className="select select-bordered select-sm flex-1 min-w-0"
+                          value={rule.employee2}
+                          onChange={(e) => {
+                            const newRules = [...workRules.conflictRules]
+                            newRules[index].employee2 = e.target.value
+                            setWorkRules(prev => ({
+                              ...prev,
+                              conflictRules: newRules
+                            }))
+                          }}
+                        >
+                          <option value="">근무자 선택</option>
+                          {getAvailableEmployeesForSelect(index, false).map(name => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        
+                        <span className="text-sm text-gray-500 flex-shrink-0">같은 유형 근무 금지</span>
+                        
+                        <button 
+                          className="btn btn-sm btn-ghost btn-circle text-red-500 hover:bg-red-50"
+                          onClick={() => {
+                            const newRules = workRules.conflictRules.filter((_, i) => i !== index)
+                            setWorkRules(prev => ({
+                              ...prev,
+                              conflictRules: newRules
+                            }))
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="divider"></div>
+
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">전체 근무일 계산 방식</span>
@@ -193,8 +365,6 @@ const WorkRuleModal = ({
                 </label>
               </div>
             </div>
-
-            <div className="divider"></div>
           </div>
 
           <div className="modal-action">

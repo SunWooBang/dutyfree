@@ -31,7 +31,8 @@ function App() {
         '/': 1
       },
       enableDailyLimit: true,
-      calculationMethod: 'sum' // 'sum' 또는 'exclude_off'
+      calculationMethod: 'sum', // 'sum' 또는 'exclude_off'
+      conflictRules: [] // 근무 충돌 방지 규칙
     }
   })
 
@@ -141,6 +142,53 @@ function App() {
     const limit = workRules.dailyLimits[newValue]
     
     return newCount <= limit
+  }
+
+  // 근무 충돌 체크 함수
+  const checkWorkConflict = (rowIndex, day, newValue) => {
+    // 근무를 선택하지 않거나 OFF 근무이거나 충돌 규칙이 없으면 충돌 없음
+    if (!newValue || newValue === '/' || !workRules.conflictRules || workRules.conflictRules.length === 0) {
+      return { hasConflict: false }
+    }
+    
+    const currentEmployee = tableRows[rowIndex]?.name?.trim()
+    if (!currentEmployee) {
+      return { hasConflict: false }
+    }
+    
+    // 현재 근무자와 충돌 관계에 있는 근무자들 찾기
+    const conflictEmployees = []
+    workRules.conflictRules.forEach(rule => {
+      if (rule.employee1 === currentEmployee && rule.employee2) {
+        conflictEmployees.push(rule.employee2)
+      } else if (rule.employee2 === currentEmployee && rule.employee1) {
+        conflictEmployees.push(rule.employee1)
+      }
+    })
+    
+    if (conflictEmployees.length === 0) {
+      return { hasConflict: false }
+    }
+    
+    // 해당 날짜에 충돌 근무자가 같은 유형의 근무를 선택했는지 확인
+    const conflictingEmployee = tableRows.find((row, idx) => {
+      if (idx === rowIndex) return false // 자기 자신 제외
+      const employeeName = row.name?.trim()
+      const selectedWork = row.dates[day]
+      
+      return conflictEmployees.includes(employeeName) && 
+             selectedWork === newValue // 같은 근무 유형인 경우만 충돌
+    })
+    
+    if (conflictingEmployee) {
+      return {
+        hasConflict: true,
+        conflictEmployee: conflictingEmployee.name,
+        conflictWork: conflictingEmployee.dates[day]
+      }
+    }
+    
+    return { hasConflict: false }
   }
 
   // Excel 내보내기 함수
@@ -381,6 +429,17 @@ function App() {
                   return
                 }
                 
+                // 근무 충돌 체크
+                const conflictCheck = checkWorkConflict(rowIndex, day, newValue)
+                if (conflictCheck.hasConflict) {
+                  showAlert(
+                    `${day}일에 ${row.name}과(와) ${conflictCheck.conflictEmployee}은(는) 같은 유형의 근무를 할 수 없습니다.\n` +
+                    `(${conflictCheck.conflictEmployee}이(가) 이미 같은 ${conflictCheck.conflictWork} 근무를 선택했습니다)`,
+                    'warning'
+                  )
+                  return
+                }
+                
                 const newRows = [...tableRows]
                 newRows[rowIndex].dates[day] = newValue
                 setTableRows(newRows)
@@ -468,6 +527,7 @@ function App() {
         workRules={workRules}
         setWorkRules={setWorkRules}
         onCloseSettings={() => setIsMenuOpen(false)}
+        employeeNames={tableRows.map(row => row.name?.trim()).filter(name => name)} // 빈 이름 제외
       />
 
       <HelpModal 
