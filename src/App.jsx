@@ -49,7 +49,7 @@ function App() {
   useEffect(() => {
     const now = new Date()
     const year = now.getFullYear()
-    const month = now.getMonth() + 1 // getMonth()는 0부터 시작하므로 +1
+    const month = now.getMonth() + 2 // getMonth()는 0부터 시작하므로 +1
     
     // 해당 월의 일 수 계산
     const days = new Date(year, month, 0).getDate()
